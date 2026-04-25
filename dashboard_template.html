@@ -141,6 +141,43 @@
   .stats-line span { margin-right:18px; display:inline-block; }
   .stats-line b { color:var(--ink); font-weight:600; }
 
+  /* year control bar above the treemap */
+  .year-control {
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+    padding:10px 14px; margin:18px 0 6px;
+    background:var(--paper); border:1px solid var(--rule); border-radius:6px;
+    font-size:14px; color:var(--ink);
+  }
+  .year-control .yc-label {
+    font-weight:600; color:var(--accent); margin-right:4px;
+    font-size:12px; text-transform:uppercase; letter-spacing:.6px;
+  }
+  .year-control select {
+    font:inherit; padding:5px 26px 5px 10px;
+    background:#fff; border:1px solid var(--rule); border-radius:4px;
+    color:var(--ink); cursor:pointer; min-width:110px;
+  }
+  .year-control select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .year-control button {
+    font:inherit; padding:5px 10px; cursor:pointer;
+    background:#fff; border:1px solid var(--rule); border-radius:4px;
+    color:var(--soft); transition:background .12s, color .12s, border-color .12s;
+  }
+  .year-control button:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .year-control #yc-prev, .year-control #yc-next {
+    width:32px; padding:5px 0; font-size:18px; line-height:1;
+  }
+  .year-control .yc-shortcuts {
+    display:flex; gap:6px; margin-left:auto; flex-wrap:wrap;
+  }
+  .year-control .yc-shortcuts button {
+    font-size:12.5px; padding:5px 10px;
+    border-color:var(--rule-soft); color:var(--soft);
+  }
+  .year-control .yc-shortcuts button.active {
+    background:var(--accent); color:#fff; border-color:var(--accent);
+  }
+
   figure.chart {
     margin:14px 0 4px; padding:6px 6px 0;
     border:1px solid var(--rule); border-radius:4px;
@@ -295,6 +332,18 @@
     from the dropdown above the chart, e.g. 2020/21 to see the COVID-19
     disruption.</p>
 
+  <div class="year-control" id="year-control">
+    <span class="yc-label">Filter by year</span>
+    <button id="yc-prev" type="button" aria-label="Previous year">&lsaquo;</button>
+    <select id="yc-select" aria-label="Select year"></select>
+    <button id="yc-next" type="button" aria-label="Next year">&rsaquo;</button>
+    <span class="yc-shortcuts">
+      <button type="button" data-year="1998">1998/99</button>
+      <button type="button" data-year="2020">COVID 2020/21</button>
+      <button type="button" data-year="2023">Latest 2023/24</button>
+    </span>
+  </div>
+
   <figure class="chart">{{DIV_TREEMAP}}
     <figcaption>Figure 1. Top 40 diagnoses by burden in the selected year.
       Area = burden; colour = per-patient intensity.</figcaption>
@@ -373,7 +422,6 @@
 </div>
 
 <script>
-  // scrollspy: highlight the sidebar link matching the section in view
   const links = document.querySelectorAll('aside nav a[href^="#"]');
   const map = {};
   links.forEach(a => {
@@ -396,7 +444,6 @@
     if (el) io.observe(el);
   });
 
-  // smooth scroll
   document.querySelectorAll('a[data-scroll]').forEach(a => {
     a.addEventListener('click', e => {
       const id = a.getAttribute('href');
@@ -406,6 +453,149 @@
       }
     });
   });
+
+  // ---------- treemap year filter ----------
+  const treemapYears = {{YEARS_JSON}};
+  const ylabel = y => `${y}/${String((y+1)%100).padStart(2,'0')}`;
+  const sel    = document.getElementById('yc-select');
+  const prev   = document.getElementById('yc-prev');
+  const next   = document.getElementById('yc-next');
+  const shorts = document.querySelectorAll('.yc-shortcuts button');
+  let curIdx   = treemapYears.length - 1;
+
+  treemapYears.forEach((y, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = ylabel(y);
+    sel.appendChild(o);
+  });
+
+  function setYear(idx) {
+    if (idx < 0 || idx >= treemapYears.length) return;
+    curIdx = idx;
+    const visible = treemapYears.map((_, i) => i === idx);
+    const lab = ylabel(treemapYears[idx]);
+    Plotly.restyle('fig-treemap', {visible: visible});
+    Plotly.relayout('fig-treemap',
+      {'title.text': `NHS Hospital Burden vs Per-patient Intensity - ${lab}`});
+    sel.value = idx;
+    shorts.forEach(b => b.classList.toggle('active',
+      parseInt(b.dataset.year) === treemapYears[idx]));
+  }
+
+  sel.addEventListener('change', e => setYear(parseInt(e.target.value)));
+  prev.addEventListener('click', () => setYear(curIdx - 1));
+  next.addEventListener('click', () => setYear(curIdx + 1));
+  shorts.forEach(b => b.addEventListener('click', () => {
+    const idx = treemapYears.indexOf(parseInt(b.dataset.year));
+    if (idx >= 0) setYear(idx);
+  }));
+
+  setYear(curIdx);
+</script>
+</body>
+</html>
+map; click any slice to zoom in.</p>
+
+  <figure class="chart">{{DIV_SUNBURST}}
+    <figcaption>Figure 5. Same hierarchy as the treemap in radial form.</figcaption>
+  </figure>
+</section>
+
+<section id="conclusion">
+  <h2><span class="num">7.</span> What the charts say</h2>
+  <p>Across 26 years the NHS admissions picture is less about one big trend
+    and more about which chapters quietly grow at the expense of others.
+    Digestive System and Musculoskeletal stay the volume backbone; Cancer
+    &amp; Blood and Neurological build per-patient intensity over time; and
+    Respiratory System absorbs the 2020 shock. The treemap alone would have
+    missed that drift, which is why the heatmap and the stream sit
+    alongside it.</p>
+</section>
+
+<footer class="colophon">
+  <span>Tharun Gurunathan &middot; University of Nottingham</span>
+  <span>Source: NHS Digital, Hospital Episode Statistics. Years {{YEARS}}.</span>
+</footer>
+
+</main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('aside nav a[href^="#"]');
+  const map = {};
+  links.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const a = map[e.target.id];
+      if (!a) return;
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        a.classList.add('active');
+      }
+    });
+  }, { rootMargin: "-30% 0px -55% 0px", threshold: 0 });
+  Object.keys(map).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+
+  document.querySelectorAll('a[data-scroll]').forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href');
+      if (id && id.startsWith('#')) {
+        const el = document.querySelector(id);
+        if (el) { e.preventDefault(); el.scrollIntoView({behavior:'smooth', block:'start'}); }
+      }
+    });
+  });
+
+  const treemapYears = {{YEARS_JSON}};
+  const ylabel = y => `${y}/${String((y+1)%100).padStart(2,'0')}`;
+  const sel    = document.getElementById('yc-select');
+  const prev   = document.getElementById('yc-prev');
+  const next   = document.getElementById('yc-next');
+  const shorts = document.querySelectorAll('.yc-shortcuts button');
+  let curIdx   = treemapYears.length - 1;
+
+  treemapYears.forEach((y, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = ylabel(y);
+    sel.appendChild(o);
+  });
+
+  function setYear(idx) {
+    if (idx < 0 || idx >= treemapYears.length) return;
+    curIdx = idx;
+    const visible = treemapYears.map((_, i) => i === idx);
+    const lab = ylabel(treemapYears[idx]);
+    Plotly.restyle('fig-treemap', {visible: visible});
+    Plotly.relayout('fig-treemap',
+      {'title.text': `NHS Hospital Burden vs Per-patient Intensity - ${lab}`});
+    sel.value = idx;
+    shorts.forEach(b => b.classList.toggle('active',
+      parseInt(b.dataset.year) === treemapYears[idx]));
+  }
+
+  sel.addEventListener('change', e => setYear(parseInt(e.target.value)));
+  prev.addEventListener('click', () => setYear(curIdx - 1));
+  next.addEventListener('click', () => setYear(curIdx + 1));
+  shorts.forEach(b => b.addEventListener('click', () => {
+    const idx = treemapYears.indexOf(parseInt(b.dataset.year));
+    if (idx >= 0) setYear(idx);
+  }));
+
+  setYear(curIdx);
+</script>
+</body>
+</html>
+idx);
+  }));
+
+  setYear(curIdx);
 </script>
 </body>
 </html>
