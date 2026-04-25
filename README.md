@@ -40,4 +40,4 @@ The treemap is the main view, with a year filter. Below it sit a sunburst (same 
 
 Python 3.10, pandas, NumPy, Plotly, Matplotlib, squarify, openpyxl. Versions are pinned in `requirements.txt`.
 
-— Tharun
+— Tharun Gurunathan
