@@ -98,47 +98,23 @@ def fig_treemap():
             custom_data=["Burden_pct", "Admissions", "MeanLOS"],
         )
         tr = tm.data[0]
-        tr.texttemplate = "<b>%{label}</b><br>%{customdata[0]:.1f}%"
+        tr.texttemplate = "<b>%{label}</b><br>%{percentRoot:.1%}"
         tr.textfont     = dict(size=12, color="#1f2937")
         tr.marker.line  = dict(width=1, color="white")
         tr.hovertemplate = ("<b>%{label}</b><br>"
-                            "Burden share: %{customdata[0]:.2f}%<br>"
-                            "Admissions: %{customdata[1]:,.0f}<br>"
-                            "Mean LOS: %{customdata[2]:.1f} days<extra></extra>")
+                            "Burden share: %{percentRoot:.2%}<br>"
+                            "Burden value: %{value:,.0f}<extra></extra>")
         tr.visible = (yr == LATEST_YEAR)
         fig.add_trace(tr)
-
-    year_btns = []
-    for i, yr in enumerate(years):
-        vis = [False] * len(years)
-        vis[i] = True
-        year_btns.append(dict(
-            label=f"{yr}/{(yr+1)%100:02d}", method="update",
-            args=[{"visible": vis},
-                  {"title.text": f"NHS Hospital Burden vs Per-patient Intensity - {yr}/{(yr+1)%100:02d}"}]
-        ))
 
     fig.update_layout(
         title=dict(
             text=f"NHS Hospital Burden vs Per-patient Intensity - {LATEST_YEAR}/{(LATEST_YEAR+1)%100:02d}",
             x=0.5, font=dict(size=16)),
-        margin=dict(t=120, l=10, r=10, b=10),
+        margin=dict(t=70, l=10, r=10, b=10),
         coloraxis=dict(colorscale=TREEMAP_SCALE, cmin=INT_LO, cmax=INT_HI,
                        colorbar=dict(title="Per-patient<br>intensity")),
         height=640,
-        updatemenus=[
-            dict(buttons=year_btns, direction="down", showactive=True,
-                 x=0.00, xanchor="left", y=1.14, yanchor="top",
-                 bgcolor="#ffffff", bordercolor="#cbd5e1", borderwidth=1,
-                 font=dict(color="#1f2937", size=11),
-                 pad=dict(l=8, r=8, t=4, b=4),
-                 active=years.index(LATEST_YEAR)),
-        ],
-        annotations=[
-            dict(text="<b>Filter by Year</b>", x=0.00, xref="paper",
-                 y=1.20, yref="paper", xanchor="left",
-                 showarrow=False, font=dict(color="#374151", size=12)),
-        ],
     )
     return _apply_dark(fig)
 
@@ -462,6 +438,7 @@ replacements = {
     "{{DIAGNOSES}}":    f"{stats['diagnoses']:,}",
     "{{CHAPTERS}}":     str(stats["chapters"]),
     "{{SUPER_CHAP}}":   str(stats["super_chap"]),
+    "{{YEARS_JSON}}":   json.dumps(sorted([int(y) for y in df["Year"].unique()])),
     "{{DIV_TREEMAP}}":  div_treemap,
     "{{DIV_HEATMAP}}":  div_heatmap,
     "{{DIV_QUADRANT}}": div_quad,
