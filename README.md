@@ -1,54 +1,43 @@
 # NHS Hospital Burden vs Per-patient Intensity (1998/99 – 2023/24)
 
-An interactive treemap dashboard built from 26 years of NHS England Hospital Episode Statistics (HES) admitted-patient-care data. Rectangle area encodes total **Burden** (Admissions × Mean Length of Stay) and colour encodes **Per-patient Intensity** (Waiting-list FAE × Mean LOS). The dashboard is filterable by financial year and groups diagnoses by their ICD-10 super-chapter and chapter.
+This is the project I built for COMP4037 Research Methods at the University of Nottingham. It's an interactive treemap of 26 years of NHS England hospital admissions, grouped by ICD-10 diagnosis. Rectangle area shows total **burden** (admissions × mean length of stay) and colour shows **per-patient intensity** (waiting-list FAE × mean LOS), so the big patches are the diagnoses that swallow the most bed-days overall and the colour tells you whether each patient costs a lot of resource or not.
 
-Built for COMP4037 Research Methods, University of Nottingham.
+Live site: **https://tharungurunathan.github.io/nhs-hospital-dashboard/**
 
-## Quick look
+## Just look at it
 
-Just open `index.html` in any modern browser. It's a single self-contained file with the chart JSON and Plotly bundled in, so no build step or web server is required.
+Open `index.html` in a browser, or use the live link above. Everything is bundled into a single file — no server, no build, no install needed. The treemap has a year dropdown in the top-left so you can step through 1998/99 to 2023/24.
 
-## Files
+## Files in this repo
 
-| File | What it is |
-| --- | --- |
-| `index.html` | The built dashboard. Treemap, sunburst, heatmap, quadrant scatter and stacked-area stream, all interactive. |
-| `dashboard_template.html` | Light-theme HTML shell that `build_website.py` fills in with chart JSON. |
-| `build_website.py` | Reads the processed CSV and writes `index.html` plus the four supplementary PNGs. |
-| `export_treemap_png.py` | Renders the static 2020/21 treemap (`supp_treemap.png`) used as Figure 1 in the report. |
-| `nhs_multi_year_analysis.py` | Data pipeline. Reads the 26 raw NHS Excel workbooks and writes `nhs_all_years_processed.csv`. |
-| `nhs_all_years_processed.csv` | The cleaned long-format dataset (~285 rows per year × 26 years). |
-| `supp_treemap.png` · `supp_sunburst.png` · `supp_heatmap.png` · `supp_quadrant.png` · `supp_stream.png` | Static chart exports referenced by the report. |
+`index.html` is the dashboard you actually open.
+`build_website.py` is what generated it.
+`dashboard_template.html` is the HTML shell that the build script fills in.
+`export_treemap_png.py` makes the static treemap PNG used as Figure 1 in my report.
+`nhs_multi_year_analysis.py` is the data pipeline — it reads the raw NHS Excel workbooks and writes the cleaned CSV.
+`nhs_all_years_processed.csv` is that cleaned CSV. About 285 rows per year × 26 years, in long format.
+`supp_treemap.png`, `supp_sunburst.png`, `supp_heatmap.png`, `supp_quadrant.png`, `supp_stream.png` are the static chart images for the report.
 
-## Reproduce from raw data
+## Data
 
-The raw HES distribution is not committed (it's ~83 MB zipped, ~110 MB unzipped). Download it from NHS Digital's Hospital Episode Statistics page and place the zip alongside the scripts:
+The dataset I'm using is `nhs_all_years_processed.csv` — it's already in the repo. I assembled it from 26 financial years of NHS Hospital Episode Statistics (admitted patient care) workbooks, harmonised the column names, dropped the aggregate rows, and added the derived metrics (mean LOS, burden, intensity). All the dashboard scripts read from that CSV directly, so you don't need to re-download anything.
 
-> https://digital.nhs.uk/data-and-information/publications/statistical/hospital-admitted-patient-care-activity
-
-Then:
+## Running it from scratch
 
 ```bash
 pip install -r requirements.txt
-python nhs_multi_year_analysis.py     # extracts the zip and writes nhs_all_years_processed.csv
-python build_website.py                # writes index.html + supp_*.png (heatmap, quadrant, stream, sunburst)
-python export_treemap_png.py           # writes supp_treemap.png
+python build_website.py        # rebuilds index.html and the supplementary PNGs
+python export_treemap_png.py   # rebuilds the Figure 1 treemap PNG
 ```
 
-If you only want to rebuild the dashboard and you already have `nhs_all_years_processed.csv`, you can skip `nhs_multi_year_analysis.py` entirely.
+If you ever want to rebuild the CSV from raw Excel workbooks, run `python nhs_multi_year_analysis.py` first — but you only need that if the underlying data changes.
 
-## What's in the dashboard
+## What's on the dashboard
 
-- **Treemap** — top 40 diagnoses by burden in any chosen year (1998/99 – 2023/24), nested by Super-chapter → Chapter → Diagnosis. Year filter dropdown is in the top-left.
-- **Sunburst** — same hierarchy as a radial view of the latest year.
-- **Heatmap** — Chapter × Year, coloured by share of total burden, useful for spotting long-run drift.
-- **Quadrant scatter** — Burden vs Per-patient Intensity on log-log axes, with reference lines splitting the field into four strategic quadrants.
-- **Stacked-area stream** — Super-chapter burden over the full 26-year window.
+The treemap is the main view, with a year filter. Below it sit a sunburst (same hierarchy as a radial), a chapter × year heatmap that makes the slow drift toward mental health and musculoskeletal admissions visible, a quadrant scatter (burden vs intensity on log-log axes) that splits diagnoses into four strategic quadrants, and a stacked-area stream of super-chapter burden across the full 26 years.
 
-## Tech
+## Stack
 
-Python 3.10+, pandas, NumPy, Plotly, Matplotlib, squarify, openpyxl. See `requirements.txt`.
+Python 3.10, pandas, NumPy, Plotly, Matplotlib, squarify, openpyxl. Versions are pinned in `requirements.txt`.
 
-## Credits
-
-Data: NHS Digital, Hospital Episode Statistics (HES) — Admitted Patient Care, financial years 1998/99 to 2023/24. Analysis and visualisation: Tharun, School of Computer Science, University of Nottingham.
+— Tharun
