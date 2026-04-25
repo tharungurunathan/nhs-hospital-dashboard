@@ -1,0 +1,6 @@
+pandas>=2.0
+numpy>=1.24
+plotly>=5.20
+matplotlib>=3.7
+squarify>=0.4
+openpyxl>=3.1
